@@ -1,4 +1,4 @@
-# Real-Time-E-commerce-Data-Platform
+# Real-Time E-commerce Lakehouse Platform
 Architecture
 
                 ┌─────────────┐
