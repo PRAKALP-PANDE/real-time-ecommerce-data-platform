@@ -1,0 +1,335 @@
+Excellent! 🎉
+
+You have now built your **first Kafka Producer**.
+
+What is happening right now:
+
+```text id="aqz9wb"
+Python Producer
+      │
+      ▼
+Kafka Topic (orders)
+```
+
+Every 2 seconds, your producer is sending a new order event into Kafka.
+
+This is a major milestone because we've moved from theory to a working event streaming system.
+
+---
+
+# What Just Happened Internally?
+
+When your code executes:
+
+```python
+producer.send("orders", order)
+```
+
+Kafka does several things:
+
+### Step 1
+
+Producer serializes the message
+
+```python
+json.dumps(order)
+```
+
+↓
+
+```json id="x0yvb8"
+{
+  "order_id": 1780,
+  ...
+}
+```
+
+---
+
+### Step 2
+
+Message is sent to Kafka Broker
+
+```text id="nq8wxy"
+localhost:9092
+```
+
+---
+
+### Step 3
+
+Kafka writes it to one of the partitions
+
+Example:
+
+```text id="ux7ohw"
+orders
+
+Partition 0
+Offset 0
+
+Partition 1
+Offset 0
+
+Partition 2
+Offset 0
+```
+
+---
+
+### Step 4
+
+Kafka acknowledges receipt
+
+Producer continues.
+
+---
+
+# Interview Question
+
+### What happens when a producer sends a message?
+
+Strong answer:
+
+> The producer serializes the message, sends it to the Kafka broker, which writes it to a partition and assigns an offset. After acknowledgment from the broker, the producer considers the message successfully delivered.
+
+---
+
+# One Improvement Before Moving Forward
+
+Currently:
+
+```python
+producer.send("orders", order)
+```
+
+does not specify a key.
+
+This means Kafka distributes messages across partitions automatically.
+
+---
+
+## Why Is This a Problem?
+
+Imagine:
+
+```text id="5pmdyz"
+Customer 101
+```
+
+places:
+
+```text id="7lv0li"
+Order A
+Order B
+Order C
+```
+
+Without a key:
+
+```text id="4qwpwb"
+Order A -> Partition 0
+Order B -> Partition 2
+Order C -> Partition 1
+```
+
+Ordering can be lost.
+
+---
+
+## Better
+
+Use customer_id as key.
+
+```python
+producer.send(
+    "orders",
+    key=str(order["customer_id"]).encode(),
+    value=order
+)
+```
+
+Now all events for the same customer go to the same partition.
+
+---
+
+# Interview Question
+
+### Why use a Kafka message key?
+
+Strong answer:
+
+> A message key determines which partition a message is written to. Using the same key ensures related events are routed to the same partition, preserving ordering.
+
+---
+
+# Next Component: Consumer
+
+Current architecture:
+
+```text id="4ifv7t"
+Producer
+    │
+    ▼
+Kafka
+```
+
+We need:
+
+```text id="m76s4z"
+Producer
+    │
+    ▼
+Kafka
+    │
+    ▼
+Consumer
+```
+
+The consumer will read messages from Kafka and print them.
+
+---
+
+# What is a Consumer?
+
+A Consumer is an application that reads data from Kafka topics.
+
+Examples in real companies:
+
+```text id="4i4l4d"
+Analytics Service
+Fraud Detection Service
+Recommendation Engine
+Inventory Service
+```
+
+All are consumers.
+
+---
+
+# Consumer Creation
+
+Create:
+
+```text id="u7c5b2"
+consumer/order_consumer.py
+```
+
+```python
+from kafka import KafkaConsumer
+import json
+
+consumer = KafkaConsumer(
+    "orders",
+    bootstrap_servers="localhost:9092",
+    auto_offset_reset="earliest",
+    value_deserializer=lambda x: json.loads(x.decode("utf-8"))
+)
+
+print("Waiting for messages...\n")
+
+for message in consumer:
+    print("Received:", message.value)
+```
+
+---
+
+# Understanding auto_offset_reset
+
+This is a favorite interview topic.
+
+### earliest
+
+```python
+auto_offset_reset="earliest"
+```
+
+Consumer starts from the beginning.
+
+```text id="c1j6d0"
+Offset 0
+Offset 1
+Offset 2
+...
+```
+
+Reads everything.
+
+---
+
+### latest
+
+```python
+auto_offset_reset="latest"
+```
+
+Consumer starts at the newest messages.
+
+Old messages are skipped.
+
+---
+
+# Interview Question
+
+### Difference between earliest and latest?
+
+Strong answer:
+
+> earliest reads all existing messages from the beginning of the partition, while latest reads only new messages arriving after the consumer starts.
+
+---
+
+# Your Next Task
+
+Create:
+
+```text id="y8w3nq"
+consumer/order_consumer.py
+```
+
+Run it in a **new terminal**:
+
+```bash id="p2m2q6"
+python consumer/order_consumer.py
+```
+
+Keep your producer running.
+
+You should start seeing:
+
+```text id="3jvjku"
+Received:
+{
+  ...
+}
+```
+
+appearing continuously.
+
+---
+
+# Once It Works
+
+We'll discuss:
+
+### Offsets
+
+How Kafka remembers what has been read.
+
+### Consumer Groups
+
+How multiple consumers share work.
+
+### Auto Commit vs Manual Commit
+
+One of the most common Kafka interview topics.
+
+### Delivery Guarantees
+
+* At-most-once
+* At-least-once
+* Exactly-once
+
+These concepts become extremely important before we connect Kafka to Spark Structured Streaming.
+
+Send me the consumer output once it starts receiving messages. 🚀

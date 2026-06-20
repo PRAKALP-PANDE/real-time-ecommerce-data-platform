@@ -1,0 +1,338 @@
+Perfect! 🎉
+
+Your topic has been created successfully.
+
+Let's decode the output like a Data Engineer rather than just moving on.
+
+---
+
+# Understanding the Topic Metadata
+
+You got:
+
+```text id="f26rhb"
+Topic: orders
+PartitionCount: 3
+ReplicationFactor: 1
+```
+
+This tells us:
+
+### Partitions
+
+```text id="yzvx9d"
+Partition 0
+Partition 1
+Partition 2
+```
+
+Three independent logs exist inside the topic.
+
+This means Kafka can support up to:
+
+```text id="7sdb9o"
+3 parallel consumers
+```
+
+in a single consumer group.
+
+---
+
+### Replication Factor
+
+```text id="kq0q5w"
+ReplicationFactor: 1
+```
+
+Meaning:
+
+```text id="4xv5am"
+Only one copy exists
+```
+
+This is fine for local development.
+
+---
+
+## Interview Question
+
+### Why not use Replication Factor = 3?
+
+Strong Answer:
+
+> Replication improves fault tolerance because multiple brokers store copies of data. In production, a replication factor of 3 is common, but for local development we only have one broker, so replication factor must be 1.
+
+---
+
+# Leader
+
+You got:
+
+```text id="zw70zk"
+Leader: 1
+```
+
+Meaning Broker 1 is responsible for handling reads and writes.
+
+---
+
+# ISR
+
+```text id="dhw1vx"
+Isr: 1
+```
+
+ISR means:
+
+```text id="26n4o7"
+In-Sync Replicas
+```
+
+Replicas that are fully caught up with the leader.
+
+Since we only have one broker:
+
+```text id="23z2xj"
+Leader = Replica = ISR
+```
+
+Everything is healthy.
+
+---
+
+# Now We Build Our First Producer
+
+This is where the project becomes exciting.
+
+Architecture:
+
+```text id="7o0g37"
+Python Producer
+      │
+      ▼
+Kafka Topic (orders)
+      │
+      ▼
+Consumer
+```
+
+---
+
+# Why Do We Need a Producer?
+
+Without a producer:
+
+```text id="g72kl9"
+Kafka Topic
+```
+
+is empty.
+
+A Producer generates events.
+
+Examples:
+
+```text id="0w0bxe"
+Order Service
+Payment Service
+Inventory Service
+```
+
+All of these are producers in real systems.
+
+---
+
+# Step 1: Create Producer Folder
+
+Inside project root:
+
+```text id="xj0v1j"
+producer/
+```
+
+---
+
+# Step 2: Install Kafka Python Client
+
+Create virtual environment if you haven't:
+
+```bash id="4fzk22"
+python -m venv venv
+```
+
+Activate:
+
+```bash id="4fxyrq"
+venv\Scripts\activate
+```
+
+Install:
+
+```bash id="56wy43"
+pip install kafka-python
+```
+
+---
+
+# Step 3: Create order_generator.py
+
+```python
+from kafka import KafkaProducer
+import json
+import time
+import random
+from datetime import datetime
+
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092',
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+while True:
+
+    order = {
+        "order_id": random.randint(1000, 9999),
+        "customer_id": random.randint(1, 100),
+        "product_id": random.randint(1, 50),
+        "quantity": random.randint(1, 5),
+        "amount": round(random.uniform(100, 5000), 2),
+        "timestamp": datetime.now().isoformat()
+    }
+
+    producer.send("orders", order)
+
+    print("Sent:", order)
+
+    time.sleep(2)
+```
+
+---
+
+# Understanding Producer Configuration
+
+```python
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092'
+)
+```
+
+### Why Bootstrap Server?
+
+This tells the producer:
+
+```text id="zrxbgz"
+Where Kafka lives
+```
+
+Without it, the producer cannot connect.
+
+---
+
+# Interview Question
+
+### What is bootstrap.servers?
+
+Strong Answer:
+
+> Bootstrap servers provide the initial connection point to a Kafka cluster. After connecting, the client discovers the cluster metadata automatically.
+
+---
+
+# Important Kafka Concept: Acknowledgements
+
+Currently we are using Kafka defaults.
+
+In production you'll often see:
+
+```python
+acks='all'
+```
+
+Why?
+
+Because Kafka supports different delivery guarantees.
+
+---
+
+## acks=0
+
+```text id="s3ms9v"
+Send and forget
+```
+
+Fastest.
+
+Risky.
+
+---
+
+## acks=1
+
+```text id="t1eq6u"
+Leader confirms write
+```
+
+Balanced.
+
+---
+
+## acks=all
+
+```text id="f4u7ko"
+All replicas confirm write
+```
+
+Safest.
+
+Slightly slower.
+
+---
+
+# Interview Question
+
+### What does acks=all mean?
+
+Strong Answer:
+
+> The producer waits until all in-sync replicas acknowledge the write before considering the message successfully written, providing the strongest durability guarantee.
+
+---
+
+# Your Next Task
+
+1. Install `kafka-python`
+2. Create `producer/order_generator.py`
+3. Run:
+
+```bash id="lz20r7"
+python producer/order_generator.py
+```
+
+You should see:
+
+```text id="rmsxlt"
+Sent:
+{
+ ...
+}
+```
+
+every few seconds.
+
+### Don't worry if you can't verify messages yet.
+
+We're going to build the Consumer next and actually watch messages flow through Kafka.
+
+When you've run the producer, send me:
+
+* Screenshot/output of the producer
+* Any errors (if any)
+
+Then we'll build the Consumer and discuss:
+
+* Consumer Groups
+* Offsets
+* Auto Commit vs Manual Commit
+* At-Least-Once processing
+
+Those concepts become critical when we later connect Spark Structured Streaming.
