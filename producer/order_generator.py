@@ -24,7 +24,11 @@ while True:
         "timestamp": datetime.now().isoformat()
     }
 
-    producer.send("orders", order)
+    producer.send(
+    "orders",
+    key=str(order["customer_id"]).encode(),
+    value=order
+)
 
     print("Sent:", order)
 
