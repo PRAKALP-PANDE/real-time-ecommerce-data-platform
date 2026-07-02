@@ -1,0 +1,238 @@
+Excellent! 🎉
+
+Kafka is running successfully.
+
+The key line is:
+
+```text id="hfqcmv"
+Kafka Server started
+```
+
+and
+
+```text id="ww9x11"
+Transition from STARTING to STARTED
+```
+
+This means:
+
+✅ Docker networking is working
+✅ Kafka Broker is running
+✅ KRaft mode is configured correctly
+✅ Port 9092 is exposed
+
+You've officially completed the infrastructure setup phase.
+
+---
+
+# Before Writing Code
+
+Let's understand the next component.
+
+## What is a Kafka Topic?
+
+Think of a Topic as a stream of events.
+
+Examples:
+
+```text id="h6a4a5"
+orders
+payments
+clickstream
+inventory
+```
+
+Each topic stores messages independently.
+
+---
+
+# Why Not One Giant Topic?
+
+Bad design:
+
+```text id="4lr86m"
+all_events
+```
+
+Contains:
+
+```text id="55od0l"
+Order Created
+Payment Success
+User Login
+Product View
+Inventory Update
+```
+
+Problems:
+
+* Hard to manage
+* Hard to consume
+* Poor scalability
+
+---
+
+Good design:
+
+```text id="h6m91g"
+orders
+payments
+clickstream
+```
+
+Each consumer subscribes only to what it needs.
+
+---
+
+# Our First Topic
+
+We'll create:
+
+```text id="m2fgit"
+orders
+```
+
+This topic will receive order events from our producer.
+
+---
+
+# Create Topic
+
+Run:
+
+```bash id="z5l83g"
+docker exec -it kafka bash
+```
+
+You should now be inside the container.
+
+---
+
+Then create the topic:
+
+```bash id="42c3sv"
+/opt/kafka/bin/kafka-topics.sh \
+--create \
+--topic orders \
+--bootstrap-server localhost:9092 \
+--partitions 3 \
+--replication-factor 1
+```
+
+---
+
+# Why 3 Partitions?
+
+Interview perspective:
+
+If we create:
+
+```text id="phag4u"
+orders
+Partitions = 3
+```
+
+Later:
+
+```text id="xk6tmy"
+Consumer A
+Consumer B
+Consumer C
+```
+
+can process data in parallel.
+
+If we create:
+
+```text id="20x7w0"
+Partitions = 1
+```
+
+we lose parallelism.
+
+---
+
+# Verify Topic
+
+Run:
+
+```bash id="85k29g"
+/opt/kafka/bin/kafka-topics.sh \
+--describe \
+--topic orders \
+--bootstrap-server localhost:9092
+```
+
+Expected output will look similar to:
+
+```text id="97pqv8"
+Topic: orders
+
+PartitionCount: 3
+ReplicationFactor: 1
+```
+
+---
+
+# Interview Question
+
+### Why did we choose 3 partitions?
+
+A strong answer:
+
+> We chose multiple partitions to allow parallel consumption and future scalability. Kafka's throughput scales with the number of partitions because consumers can process partitions concurrently.
+
+---
+
+# After Topic Creation
+
+We'll build our first Producer.
+
+Architecture:
+
+```text id="d4sduq"
+order_generator.py
+        │
+        ▼
+Kafka Topic (orders)
+        │
+        ▼
+Consumer
+        │
+        ▼
+Terminal Output
+```
+
+This will be your first end-to-end event pipeline.
+
+---
+
+# Your Task
+
+Run:
+
+```bash id="9o1d7v"
+docker exec -it kafka bash
+```
+
+Create the topic.
+
+Verify the topic.
+
+Then send me the output of:
+
+```bash id="59ab4x"
+/opt/kafka/bin/kafka-topics.sh \
+--describe \
+--topic orders \
+--bootstrap-server localhost:9092
+```
+
+Once I see the topic metadata, we'll write the Producer and I'll explain:
+
+* Why Kafka clients exist
+* Producer acknowledgements (acks)
+* Delivery guarantees
+* At-most-once vs At-least-once vs Exactly-once
+
+These are extremely common Kafka interview topics.

@@ -1,0 +1,219 @@
+Good attempt, but there's a very important Kafka concept to correct.
+
+## Your Answer
+
+```text
+Partition 0 -> Consumer 1
+Partition 1 -> Consumer 2
+Partition 2 -> wait until any consumer gets free
+```
+
+❌ This is **not how Kafka works**.
+
+Kafka does **not** keep a partition waiting for a free consumer.
+
+---
+
+# Correct Behavior
+
+Given:
+
+```text
+Partitions = 3
+Consumers = 2
+```
+
+Kafka assigns **all partitions immediately**.
+
+A possible assignment:
+
+```text
+Partition 0 -> Consumer 1
+Partition 1 -> Consumer 2
+Partition 2 -> Consumer 1
+```
+
+or
+
+```text
+Partition 0 -> Consumer 1
+Partition 1 -> Consumer 1
+Partition 2 -> Consumer 2
+```
+
+Both are valid.
+
+---
+
+# Rule
+
+Kafka tries to distribute partitions as evenly as possible across consumers in the same consumer group.
+
+Think of it like:
+
+```text
+3 partitions
+2 consumers
+
+3 ÷ 2 = 1.5
+```
+
+One consumer gets 2 partitions.
+
+One consumer gets 1 partition.
+
+---
+
+# Important Interview Question
+
+### Q: What is the maximum parallelism of a Kafka consumer group?
+
+Many candidates say:
+
+> Number of consumers
+
+❌ Wrong.
+
+Correct answer:
+
+> The maximum parallelism is limited by the number of partitions.
+
+---
+
+Example 1
+
+```text
+Partitions = 3
+Consumers = 10
+```
+
+Only:
+
+```text
+3 consumers work
+7 consumers idle
+```
+
+---
+
+Example 2
+
+```text
+Partitions = 10
+Consumers = 3
+```
+
+All consumers work.
+
+Some consumers simply get more partitions.
+
+---
+
+# Why This Matters for Spark
+
+Later we'll have:
+
+```text
+Kafka Topic
+      ↓
+Spark Structured Streaming
+```
+
+If your topic has:
+
+```text
+1 partition
+```
+
+then Spark can only read:
+
+```text
+1 stream task
+```
+
+No matter how powerful your cluster is.
+
+This is one of the most common performance bottlenecks in production.
+
+---
+
+# Interview-Level Understanding
+
+Suppose an interviewer asks:
+
+> We expect 1 million order events per minute. Would you create 1 partition or 20 partitions?
+
+Strong answer:
+
+> I would use multiple partitions because partitions enable parallel consumption. More partitions allow Kafka consumers and Spark jobs to process data concurrently, improving throughput and scalability.
+
+---
+
+# Your Current Kafka Knowledge
+
+You now understand:
+
+✅ Producer
+✅ Consumer
+✅ Topic
+✅ Partition
+✅ Offset
+✅ Consumer Group
+✅ Ordering Guarantee
+✅ Partition Assignment
+✅ Parallelism
+
+This is already more Kafka knowledge than many junior Data Engineer candidates have.
+
+---
+
+# Next Hands-On Task
+
+Now let's actually get Kafka running.
+
+### Step 1
+
+Create the project directory:
+
+```text
+real-time-ecommerce-platform/
+```
+
+### Step 2
+
+Create the `docker-compose.yml` I provided.
+
+### Step 3
+
+Run:
+
+```bash
+docker compose up -d
+```
+
+### Step 4
+
+Check:
+
+```bash
+docker ps
+```
+
+### Step 5
+
+Check logs:
+
+```bash
+docker logs kafka
+```
+
+---
+
+When you've done that, send me:
+
+1. Your `docker ps` output
+2. The last 15–20 lines of `docker logs kafka`
+
+Then we'll troubleshoot if needed and move to **creating our first Kafka topic (`orders`) and writing our first producer**.
+
+At that point, you'll be sending real events through Kafka rather than just learning the theory.
