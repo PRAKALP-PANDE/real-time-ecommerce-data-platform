@@ -4,12 +4,13 @@ import time
 import random
 from datetime import datetime
 
-producer = KafkaProducer(
-    bootstrap_servers="localhost:9092",
-    value_serializer=lambda v: json.dumps(v).encode("utf-8")
-)
 
 def generate_orders(num_orders=10):
+
+    producer = KafkaProducer(
+        bootstrap_servers="localhost:9092",
+        value_serializer=lambda v: json.dumps(v).encode("utf-8")
+    )
 
     for _ in range(num_orders):
 
@@ -33,6 +34,7 @@ def generate_orders(num_orders=10):
         time.sleep(2)
 
     producer.flush()
+    producer.close()
 
 
 if __name__ == "__main__":

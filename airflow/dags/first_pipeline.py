@@ -4,9 +4,11 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 
+import sys
 
-def print_message():
-    print("Project 2 pipeline started successfully!")
+sys.path.append("/opt/airflow/project")
+
+from producer.generate_orders import generate_orders
 
 
 with DAG(
@@ -21,13 +23,16 @@ with DAG(
         task_id="start"
     )
 
-    validate_environment = PythonOperator(
-        task_id="validate_environment",
-        python_callable=print_message
+    generate_orders_task = PythonOperator(
+        task_id="generate_orders",
+        python_callable=generate_orders,
+        op_kwargs={
+            "num_orders": 10
+        }
     )
 
     finish = EmptyOperator(
         task_id="finish"
     )
 
-    start >> validate_environment >> finish
+    start >> generate_orders_task >> finish
