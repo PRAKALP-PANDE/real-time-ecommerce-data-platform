@@ -396,7 +396,7 @@ This project helped me gain hands-on experience with:
 **Prakalp Pande**
 
 - GitHub: https://github.com/PRAKALP-PANDE
-- LinkedIn: *(Add your LinkedIn URL here)*
+- LinkedIn: *https://www.linkedin.com/in/prakalp-pande/*
 
 ---
 
