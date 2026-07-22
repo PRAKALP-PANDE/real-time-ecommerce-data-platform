@@ -2,7 +2,7 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
 
 import sys
 
@@ -23,12 +23,9 @@ with DAG(
         task_id="start"
     )
 
-    generate_orders_task = PythonOperator(
+    generate_orders_task = BashOperator(
         task_id="generate_orders",
-        python_callable=generate_orders,
-        op_kwargs={
-            "num_orders": 10
-        }
+        bash_command="cd /opt/airflow/project && python producer/generate_orders.py"
     )
 
     finish = EmptyOperator(

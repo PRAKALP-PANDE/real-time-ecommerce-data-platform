@@ -55,6 +55,7 @@ x-airflow-common:
     - ${ENV_FILE_PATH:-.env}
   environment:
     &airflow-common-env
+    KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
@@ -337,3 +338,9 @@ services:
 
 volumes:
   postgres-db-volume:
+
+
+networks:
+  default:
+    external: true
+    name: real-time-ecommerce-platform_default
